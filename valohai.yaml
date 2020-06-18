@@ -23,6 +23,10 @@
         - name: train
           type: execution
           step: train-model
+          override:
+            inputs:
+              - name: dataset-images
+              - name: dataset-labels
       edges:
         - [generate.output.images*, train.input.dataset-images]
         - [generate.output.labels*, train.input.dataset-labels]
