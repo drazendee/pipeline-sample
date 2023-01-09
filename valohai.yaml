@@ -38,6 +38,4 @@
       type: task
       step: aggregation
     edges:
-    - [preprocess.output.transformed/*, aggregation.input.transformed]
-
-    - [preprocess.metadata.sensorids, aggregation.parameter.sensor_id]
+    
