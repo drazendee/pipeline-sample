@@ -37,5 +37,5 @@
     - name: aggregation
       type: task
       step: aggregation
-    edges:
+    edges: []
     
