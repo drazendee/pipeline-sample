@@ -1,32 +1,47 @@
----
-
-  - step:
-      name: generate-dataset
-      image: python:3.6
-      command: python preprocess.py
-  - step:
-      name: train-model
-      image: tensorflow/tensorflow:2.2.0-gpu
-      command: python train.py
-      inputs:
-        - name: dataset-images
-          default: datum://0172c70d-0c33-5f65-119f-2aa1497f55ea
-        - name: dataset-labels
-          default: datum://0172c70d-0db9-43ed-e19e-17f264f4a640
-  # define "generate-dataset" and "train-model" steps above...
-  - pipeline:
-      name: simple-pipeline
-      nodes:
-        - name: generate
-          type: execution
-          step: generate-dataset
-        - name: train
-          type: execution
-          step: train-model
-          override:
-            inputs:
-              - name: dataset-images
-              - name: dataset-labels
-      edges:
-        - [generate.output.images*, train.input.dataset-images]
-        - [generate.output.labels*, train.input.dataset-labels]
+- step:
+    name: preprocess-dataset
+    image: python:3.9
+    command:
+    - pip install -r requirements.txt
+    - python ./preprocess_dataset.py {parameters}
+    parameters:
+      - name: execution_date
+        type: string
+        default: ""
+    inputs:
+      - name: raw
+        default: "s3://pressure-analysis-and-fc-dev/raw/date={parameter:execution_date}"
+- step:
+    name: aggregation
+    image: python:3.10.7
+    command:
+    - pip install -r aggregation/requirements.txt
+    - python aggregation/main.py {parameters}
+    parameters:
+    - name: sensor_id
+      type: string
+    - name: execution_date
+      type: string
+      optional: true
+    inputs:
+    - name: transformed
+      default: s3://pressure-analysis-and-fc-dev/transformed/*
+      keep-directories: suffix
+      optional: false
+- pipeline:
+    name: preprocess-and-aggregation
+    nodes:
+    - name: preprocess
+      type: execution
+      step: preprocess-dataset
+      actions:
+      - when: node-complete
+        if: metadata.should_continue == 0
+        then: stop-pipeline
+    - name: aggregation
+      type: task
+      step: aggregation
+    edges:
+    - [preprocess.output.transformed/*, aggregation.input.transformed]
+    - [preprocess.parameter.execution_date, aggregation.parameter.execution_date]
+    - [preprocess.metadata.sensorids, aggregation.parameter.sensor_id]
