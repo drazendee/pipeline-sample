@@ -34,8 +34,14 @@
     - name: preprocess
       type: execution
       step: preprocess-dataset
+      actions:
+      - when: node-complete
+        if: metadata.should_continue == 0
+        then: stop-pipeline
     - name: aggregation
       type: execution
       step: aggregation
-    edges: []
-    
+    edges:
+    - [preprocess.output.transformed/*, aggregation.input.transformed]
+    - [preprocess.parameter.execution_date, aggregation.parameter.execution_date]
+    - [preprocess.metadata.sensorids, aggregation.parameter.sensor_id]
