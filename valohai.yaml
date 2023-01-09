@@ -39,5 +39,5 @@
       step: aggregation
     edges:
     - [preprocess.output.transformed/*, aggregation.input.transformed]
-    - [preprocess.parameter.execution_date, aggregation.parameter.execution_date]
+
     - [preprocess.metadata.sensorids, aggregation.parameter.sensor_id]
